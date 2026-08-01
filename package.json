@@ -1,12 +1,15 @@
 {
   "name": "147-study-app",
+  "homepage": "https://mauryasarthak13-ai.github.io/Study-Work",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "react": "^18.2.0",
