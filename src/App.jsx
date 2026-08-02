@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import PomodoroTimer from './components/PomodoroTimer';
 
 // --- Sound Synthesizer via Web Audio API ---
 const playAudioEffect = (type = 'success') => {
@@ -28,7 +29,9 @@ const playAudioEffect = (type = 'success') => {
       osc.start();
       osc.stop(ctx.currentTime + 0.2);
     }
-  } catch (e) {}
+  } catch (e) {
+    // noop
+  }
 };
 
 // --- Helper Date Functions ---
@@ -91,13 +94,11 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('home');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
-  const [activeRevisionTask, setActiveRevisionTask] = useState(null);
+  const [isAddMistakeOpen, setIsAddMistakeOpen] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(formatDateISO());
 
   const [newTopic, setNewTopic] = useState({ subject: 'Programming', title: '', notes: '' });
   const [newMistake, setNewMistake] = useState({ title: '', correction: '' });
-  const [isAddMistakeOpen, setIsAddMistakeOpen] = useState(false);
 
   useEffect(() => localStorage.setItem('study_147_topics', JSON.stringify(topics)), [topics]);
   useEffect(() => localStorage.setItem('study_147_mistakes', JSON.stringify(mistakes)), [mistakes]);
@@ -107,7 +108,7 @@ export default function App() {
 
   const todayRevisions = useMemo(() => {
     const list = [];
-    topics.forEach(t => {
+    topics.forEach((t) => {
       if (t.archived) return;
       if (t.day1Date <= todayStr && !t.day1Completed) list.push({ ...t, stage: 1, isOverdue: t.day1Date < todayStr });
       else if (t.day1Completed && t.day4Date <= todayStr && !t.day4Completed) list.push({ ...t, stage: 4, isOverdue: t.day4Date < todayStr });
@@ -117,8 +118,8 @@ export default function App() {
   }, [topics, todayStr]);
 
   const addXP = (amount) => {
-    playAudioEffect('success');
-    setStats(prev => {
+    try { playAudioEffect('success'); } catch (e) {}
+    setStats((prev) => {
       const newXp = prev.xp + amount;
       return { ...prev, xp: newXp, level: Math.floor(newXp / 200) + 1, lastStudyDate: todayStr };
     });
@@ -128,32 +129,56 @@ export default function App() {
     e.preventDefault();
     if (!newTopic.title.trim()) return;
     const created = formatDateISO();
-    setTopics(prev => [{
-      id: 'topic-' + Date.now(), subject: newTopic.subject, title: newTopic.title.trim(), notes: newTopic.notes.trim(),
-      createdAt: created, day1Date: created, day4Date: addDaysToISO(created, 3), day7Date: addDaysToISO(created, 6),
-      day1Completed: false, day4Completed: false, day7Completed: false, archived: false
-    }, ...prev]);
+    setTopics((prev) => [
+      {
+        id: 'topic-' + Date.now(),
+        subject: newTopic.subject,
+        title: newTopic.title.trim(),
+        notes: newTopic.notes.trim(),
+        createdAt: created,
+        day1Date: created,
+        day4Date: addDaysToISO(created, 3),
+        day7Date: addDaysToISO(created, 6),
+        day1Completed: false,
+        day4Completed: false,
+        day7Completed: false,
+        archived: false,
+      },
+      ...prev,
+    ]);
     setNewTopic({ subject: 'Programming', title: '', notes: '' });
     setIsAddModalOpen(false);
   };
 
   const handleCompleteRevision = (topicId, stage) => {
-    setTopics(prev => prev.map(t => {
-      if (t.id === topicId) {
-        if (stage === 1) return { ...t, day1Completed: true };
-        if (stage === 4) return { ...t, day4Completed: true };
-        if (stage === 7) return { ...t, day7Completed: true };
-      }
-      return t;
-    }));
+    setTopics((prev) =>
+      prev.map((t) => {
+        if (t.id === topicId) {
+          if (stage === 1) return { ...t, day1Completed: true };
+          if (stage === 4) return { ...t, day4Completed: true };
+          if (stage === 7) return { ...t, day7Completed: true };
+        }
+        return t;
+      })
+    );
     addXP(stage === 7 ? 80 : 30);
-    setIsRevisionModalOpen(false);
   };
 
   const handleDeleteTopic = (id) => {
-    if(window.confirm('Delete this topic permanently?')) {
-        setTopics(prev => prev.filter(t => t.id !== id));
+    if (window.confirm('Delete this topic permanently?')) {
+      setTopics((prev) => prev.filter((t) => t.id !== id));
     }
+  };
+
+  const handleAddMistake = (e) => {
+    e.preventDefault();
+    if (!newMistake.title.trim()) return;
+    setMistakes((prev) => [
+      { id: 'mistake-' + Date.now(), title: newMistake.title.trim(), correction: newMistake.correction.trim(), resolved: false },
+      ...prev,
+    ]);
+    setNewMistake({ title: '', correction: '' });
+    setIsAddMistakeOpen(false);
   };
 
   return (
@@ -169,23 +194,27 @@ export default function App() {
               </div>
             </div>
           </div>
-          <nav className="p-2 md:p-3 space-x-1 md:space-x-0 md:space-y-1 flex md:block overflow-x-auto">
+
+          <nav className="p-2 md:p-3 space-y-1">
             {[
               { id: 'home', label: 'Dashboard', badge: todayRevisions.length },
-              { id: 'topics', label: 'All Topics', badge: 0 },
+              { id: 'topics', label: 'All Topics', badge: topics.length },
               { id: 'calendar', label: 'Calendar', badge: 0 },
               { id: 'pomodoro', label: 'Focus Timer', badge: 0 },
-              { id: 'mistakes', label: 'Mistakes', badge: mistakes.filter(m => !m.resolved).length },
-            ].map(item => (
-              <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all ${ activeTab === item.id ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200' }`}>
-                <span>{item.label}</span>
-                {item.badge > 0 && <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">{item.badge}</span>}
+              { id: 'mistakes', label: 'Mistakes', badge: mistakes.filter((m) => !m.resolved).length },
+            ].map((item) => (
+              <button key={item.id} onClick={() => setActiveTab(item.id)} className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm hover:bg-slate-800">
+                <div className="flex justify-between items-center">
+                  <span>{item.label}</span>
+                  {item.badge > 0 && <span className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400">{item.badge}</span>}
+                </div>
               </button>
             ))}
           </nav>
         </div>
-        <div className="hidden md:block p-4 border-t border-slate-800">
-          <button onClick={() => setIsAddModalOpen(true)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition text-sm">+ Add New Topic</button>
+
+        <div className="p-4 border-t border-slate-800">
+          <button onClick={() => setIsAddModalOpen(true)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-xl">+ Add New</button>
         </div>
       </aside>
 
@@ -201,7 +230,7 @@ export default function App() {
             </h2>
           </div>
           <div className="flex space-x-3">
-             <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-amber-400 font-bold text-sm">⭐ Lvl {stats.level} ({stats.xp} XP)</div>
+            <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-amber-400 font-bold text-sm">⭐ Lvl {stats.level} ({stats.xp} XP)</div>
             <button onClick={() => setIsAddModalOpen(true)} className="md:hidden bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm px-4 py-2 rounded-xl">+ Add</button>
           </div>
         </div>
@@ -239,9 +268,9 @@ export default function App() {
                         <div className="text-[10px] text-indigo-400 font-bold uppercase mb-1">Day {item.stage} Revision • {item.subject}</div>
                         <h4 className="text-base font-bold text-white">{item.title}</h4>
                       </div>
-                      <button onClick={() => { setActiveRevisionTask(item); setIsRevisionModalOpen(true); }} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg">
-                        Start Revision
-                      </button>
+                      <div className="flex justify-end">
+                        <button onClick={() => handleCompleteRevision(item.id, item.stage)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded">Mark Done</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -253,89 +282,95 @@ export default function App() {
         {activeTab === 'topics' && (
           <div className="space-y-4">
             {topics.length === 0 ? (
-               <div className="text-center py-10 bg-slate-900 rounded-xl text-slate-400">No topics tracked yet.</div>
-            ) : topics.map(topic => {
-              const color = SUBJECT_COLORS[topic.subject] || SUBJECT_COLORS.Other;
-              return (
-                <div key={topic.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 relative">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center space-x-2">
-                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${color.bg} ${color.text} border ${color.border}`}>{topic.subject}</span>
-                       <h3 className="text-base font-bold text-white">{topic.title}</h3>
+              <div className="text-center py-10 bg-slate-900 rounded-xl text-slate-400">No topics tracked yet.</div>
+            ) : (
+              topics.map((topic) => {
+                const color = SUBJECT_COLORS[topic.subject] || SUBJECT_COLORS.Other;
+                return (
+                  <div key={topic.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 relative">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-2">
+                        <span className={`${color.bg} ${color.text} px-2 py-0.5 rounded-md border ${color.border} text-xs font-bold`}>{topic.subject}</span>
+                        <h3 className="text-base font-bold text-white">{topic.title}</h3>
+                      </div>
+                      <button onClick={() => handleDeleteTopic(topic.id)} className="text-slate-500 hover:text-rose-400 text-xs">✕ Delete</button>
                     </div>
-                    <button onClick={() => handleDeleteTopic(topic.id)} className="text-slate-500 hover:text-rose-400 text-xs">✕ Delete</button>
+                    {topic.notes && <p className="text-xs text-slate-400 mb-4 bg-slate-950 p-2 rounded-lg">{topic.notes}</p>}
+                    <div className="grid grid-cols-3 gap-2 mt-4 text-center text-xs font-bold">
+                      <div className={`p-2 rounded-lg border`}>{/* Day 1 */}
+                        <div>Day 1</div>
+                        <div className="text-[9px] opacity-70 mt-1">{formatDisplayDate(topic.day1Date)}</div>
+                        <div className="mt-1">{topic.day1Completed ? '✅' : '⏳'}</div>
+                      </div>
+                      <div className={`p-2 rounded-lg border`}>{/* Day 4 */}
+                        <div>Day 4</div>
+                        <div className="text-[9px] opacity-70 mt-1">{formatDisplayDate(topic.day4Date)}</div>
+                        <div className="mt-1">{topic.day4Completed ? '✅' : '⏳'}</div>
+                      </div>
+                      <div className={`p-2 rounded-lg border`}>{/* Day 7 */}
+                        <div>Day 7</div>
+                        <div className="text-[9px] opacity-70 mt-1">{formatDisplayDate(topic.day7Date)}</div>
+                        <div className="mt-1">{topic.day7Completed ? '✅' : '⏳'}</div>
+                      </div>
+                    </div>
                   </div>
-                  {topic.notes && <p className="text-xs text-slate-400 mb-4 bg-slate-950 p-2 rounded-lg">{topic.notes}</p>}
-                  <div className="grid grid-cols-3 gap-2 mt-4 text-center text-xs font-bold">
-                    <div className={`p-2 rounded-lg border flex flex-col items-center justify-center ${topic.day1Completed ? 'bg-emerald-900/30 border-emerald-500/30 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                      <span>Day 1</span><span className="text-[9px] opacity-70 mt-1">{formatDisplayDate(topic.day1Date)}</span><span className="mt-1">{topic.day1Completed ? '✅' : '⏳'}</span>
-                    </div>
-                    <div className={`p-2 rounded-lg border flex flex-col items-center justify-center ${topic.day4Completed ? 'bg-emerald-900/30 border-emerald-500/30 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                      <span>Day 4</span><span className="text-[9px] opacity-70 mt-1">{formatDisplayDate(topic.day4Date)}</span><span className="mt-1">{topic.day4Completed ? '✅' : '⏳'}</span>
-                    </div>
-                    <div className={`p-2 rounded-lg border flex flex-col items-center justify-center ${topic.day7Completed ? 'bg-emerald-900/30 border-emerald-500/30 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                      <span>Day 7</span><span className="text-[9px] opacity-70 mt-1">{formatDisplayDate(topic.day7Date)}</span><span className="mt-1">{topic.day7Completed ? '✅' : '⏳'}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         )}
 
         {activeTab === 'calendar' && (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">Select Date</h3>
-                <input type="date" value={selectedCalendarDate} onChange={(e) => setSelectedCalendarDate(e.target.value)} className="bg-slate-800 border border-slate-700 text-white text-xs px-3 py-1.5 rounded-xl"/>
-              </div>
-              <div className="text-xs text-slate-400">Showing revisions scheduled for: <strong className="text-indigo-400">{formatDisplayDate(selectedCalendarDate)}</strong></div>
-              {(() => {
-                const tasksOnDate = [];
-                topics.forEach(t => {
-                  if (t.archived) return;
-                  if (t.day1Date === selectedCalendarDate) tasksOnDate.push({ ...t, stage: 1, done: t.day1Completed });
-                  if (t.day4Date === selectedCalendarDate) tasksOnDate.push({ ...t, stage: 4, done: t.day4Completed });
-                  if (t.day7Date === selectedCalendarDate) tasksOnDate.push({ ...t, stage: 7, done: t.day7Completed });
-                });
-                if (tasksOnDate.length === 0) return <div className="text-center py-10 bg-slate-950 rounded-xl text-slate-500">No tasks on this date.</div>;
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-                    {tasksOnDate.map(task => (
-                      <div key={task.id + task.stage} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
-                        <div>
-                          <div className="text-[10px] font-bold text-indigo-400 uppercase">Day {task.stage} • {task.subject}</div>
-                          <div className="text-sm font-bold text-white mt-0.5">{task.title}</div>
-                        </div>
-                        <span className={`text-xs px-2.5 py-1 rounded-md font-semibold ${task.done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                          {task.done ? 'Done ✅' : 'Pending ⏳'}
-                        </span>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Select Date</h3>
+              <input type="date" value={selectedCalendarDate} onChange={(e) => setSelectedCalendarDate(e.target.value)} className="bg-slate-800 border border-slate-700 text-white text-xs px-3 py-2 rounded" />
+            </div>
+            <div className="text-xs text-slate-400">Showing revisions scheduled for: <strong className="text-indigo-400">{formatDisplayDate(selectedCalendarDate)}</strong></div>
+            {(() => {
+              const tasksOnDate = [];
+              topics.forEach((t) => {
+                if (t.archived) return;
+                if (t.day1Date === selectedCalendarDate) tasksOnDate.push({ ...t, stage: 1, done: t.day1Completed });
+                if (t.day4Date === selectedCalendarDate) tasksOnDate.push({ ...t, stage: 4, done: t.day4Completed });
+                if (t.day7Date === selectedCalendarDate) tasksOnDate.push({ ...t, stage: 7, done: t.day7Completed });
+              });
+              if (tasksOnDate.length === 0) return <div className="text-center py-10 bg-slate-950 rounded-xl text-slate-500">No tasks on this date.</div>;
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                  {tasksOnDate.map((task) => (
+                    <div key={task.id + task.stage} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-center">
+                      <div>
+                        <div className="text-[10px] font-bold text-indigo-400 uppercase">Day {task.stage} • {task.subject}</div>
+                        <div className="text-sm font-bold text-white mt-0.5">{task.title}</div>
                       </div>
-                    ))}
-                  </div>
-                );
-              })()}
+                      <span className={`text-xs px-2.5 py-1 rounded-md font-semibold ${task.done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                        {task.done ? 'Done ✅' : 'Pending ⏳'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
         {activeTab === 'pomodoro' && (
-          <PomodoroTimer onSessionComplete={(minutes) => { addXP(50); setStats(prev => ({ ...prev, totalMinutes: prev.totalMinutes + minutes })); }} />
+          <PomodoroTimer onSessionComplete={(minutes) => { addXP(50); setStats((p) => ({ ...p, totalMinutes: p.totalMinutes + minutes })); }} />
         )}
 
         {activeTab === 'mistakes' && (
-           <div className="space-y-6">
-            <div className="flex justify-end"><button onClick={() => setIsAddMistakeOpen(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl">+ Log New Mistake</button></div>
+          <div className="space-y-6">
+            <div className="flex justify-end"><button onClick={() => setIsAddMistakeOpen(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl">+ Add Mistake</button></div>
             {mistakes.length === 0 ? (
-               <div className="text-center py-10 bg-slate-900 rounded-xl text-slate-400">No mistakes logged. You are doing great!</div>
+              <div className="text-center py-10 bg-slate-900 rounded-xl text-slate-400">No mistakes logged. You are doing great!</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {mistakes.map((m) => (
                   <div key={m.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="text-sm font-bold text-white">{m.title}</h4>
-                      <button onClick={() => setMistakes(prev => prev.map(item => item.id === m.id ? { ...item, resolved: !item.resolved } : item))} className={`text-[10px] font-bold px-2 py-0.5 rounded ${m.resolved ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
-                        {m.resolved ? 'Mastered ✅' : 'Mark Fixed'}
-                      </button>
+                      <button onClick={() => setMistakes((prev) => prev.map((item) => item.id === m.id ? { ...item, resolved: !item.resolved } : item))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800">{m.resolved ? 'Mastered ✅' : 'Mark Fixed'}</button>
                     </div>
                     <p className="text-xs text-emerald-300/80 bg-emerald-950/20 p-2 rounded border border-emerald-900/30">💡 <strong>Correction:</strong> {m.correction}</p>
                   </div>
@@ -344,11 +379,64 @@ export default function App() {
             )}
           </div>
         )}
-      </main>
 
-      {/* --- MODALS --- */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-4">Add New Topic</h3>
-            <form onSubmit={
+        {/* Modals */}
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl">
+              <h3 className="text-lg font-bold text-white mb-4">Add New Topic</h3>
+              <form onSubmit={handleCreateTopic} className="space-y-3">
+                <div>
+                  <label className="text-xs text-slate-300">Subject</label>
+                  <select value={newTopic.subject} onChange={(e) => setNewTopic((s) => ({ ...s, subject: e.target.value }))} className="w-full mt-1 p-2 rounded bg-slate-800">
+                    <option>Programming</option>
+                    <option>Mathematics</option>
+                    <option>Science</option>
+                    <option>History</option>
+                    <option>Languages</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-slate-300">Title</label>
+                  <input required value={newTopic.title} onChange={(e) => setNewTopic((s) => ({ ...s, title: e.target.value }))} className="w-full mt-1 p-2 rounded bg-slate-800" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-300">Notes</label>
+                  <textarea value={newTopic.notes} onChange={(e) => setNewTopic((s) => ({ ...s, notes: e.target.value }))} className="w-full mt-1 p-2 rounded bg-slate-800" rows={3} />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-3 py-1 rounded bg-slate-700">Cancel</button>
+                  <button type="submit" className="px-3 py-1 rounded bg-indigo-600 text-white">Add Topic</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {isAddMistakeOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl">
+              <h3 className="text-lg font-bold text-white mb-4">Add Mistake</h3>
+              <form onSubmit={handleAddMistake} className="space-y-3">
+                <div>
+                  <label className="text-xs text-slate-300">Title</label>
+                  <input required value={newMistake.title} onChange={(e) => setNewMistake((s) => ({ ...s, title: e.target.value }))} className="w-full mt-1 p-2 rounded bg-slate-800" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-300">Correction</label>
+                  <textarea value={newMistake.correction} onChange={(e) => setNewMistake((s) => ({ ...s, correction: e.target.value }))} className="w-full mt-1 p-2 rounded bg-slate-800" rows={3} />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button type="button" onClick={() => setIsAddMistakeOpen(false)} className="px-3 py-1 rounded bg-slate-700">Cancel</button>
+                  <button type="submit" className="px-3 py-1 rounded bg-indigo-600 text-white">Add</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+      </main>
+    </div>
+  );
+}
