@@ -25,7 +25,6 @@ function playBeep() {
   }
 }
 
-// Simple confetti implementation (small, lightweight)
 function fireConfetti() {
   const canvas = document.createElement('canvas');
   canvas.style.position = 'fixed';
@@ -50,7 +49,7 @@ function fireConfetti() {
 
   const colors = ['#4F8CFF', '#7C3AED', '#22C55E', '#F59E0B', '#EF4444', '#ffffff'];
   const particles = [];
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 60; i++) {
     particles.push({
       x: Math.random() * window.innerWidth,
       y: -10 - Math.random() * 200,
@@ -59,7 +58,7 @@ function fireConfetti() {
       size: Math.random() * 8 + 4,
       color: colors[Math.floor(Math.random() * colors.length)],
       rot: Math.random() * 360,
-      dr: (Math.random() - 0.5) * 10
+      dr: (Math.random() - 0.5) * 10,
     });
   }
 
@@ -73,7 +72,7 @@ function fireConfetti() {
     particles.forEach((p) => {
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.15; // gravity
+      p.vy += 0.15;
       p.rot += p.dr;
       ctx.save();
       ctx.translate(p.x, p.y);
@@ -89,12 +88,14 @@ function fireConfetti() {
     cancelAnimationFrame(raf);
     window.removeEventListener('resize', resize);
     if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
-  }, 2200);
+  }, 2000);
 }
 
 export default function PomodoroTimer({ onSessionComplete }) {
   const savedSettings = getStorage('study_147_timer_settings', { work: 25, short: 5, long: 15, autoCycle: false, soundOn: true, saveAsDefault: false });
   const lastSession = getStorage('study_147_timer_last', 'work');
+  const savedEnd = getStorage('study_147_timer_end', null);
+  const savedRunning = getStorage('study_147_timer_running', false);
 
   const [settings, setSettings] = useState(savedSettings);
   const [openSettings, setOpenSettings] = useState(false);
@@ -103,13 +104,12 @@ export default function PomodoroTimer({ onSessionComplete }) {
   const [totalSeconds, setTotalSeconds] = useState(settings.work * 60);
   const [remaining, setRemaining] = useState(settings.work * 60);
   const [running, setRunning] = useState(false);
+  const [endTime, setEndTime] = useState(savedEnd);
   const intervalRef = useRef(null);
   const startedRef = useRef(false);
-  const ringRef = useRef(null);
   const [tickAnim, setTickAnim] = useState(false);
 
   useEffect(() => {
-    // if settings change, update defaults but do not overwrite active timer unless saveAsDefault true
     setStorage('study_147_timer_settings', settings);
   }, [settings]);
 
@@ -118,24 +118,54 @@ export default function PomodoroTimer({ onSessionComplete }) {
   }, [sessionType]);
 
   useEffect(() => {
-    setTotalSeconds(minutesInput * 60);
-    setRemaining(minutesInput * 60);
+    const secs = Math.max(1, Number(minutesInput)) * 60;
+    setTotalSeconds(secs);
+    if (!running) setRemaining(secs);
   }, [minutesInput]);
 
   useEffect(() => {
-    function onKey(e) {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        toggleStartPause();
-      } else if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
-        handleReset();
+    if (savedEnd) {
+      const now = Date.now();
+      const rem = Math.max(0, Math.round((savedEnd - now) / 1000));
+      setRemaining(rem);
+      setTotalSeconds(Math.max(rem, 60));
+      if (savedRunning && savedEnd > now) {
+        setRunning(true);
+        setEndTime(savedEnd);
+      } else if (savedEnd <= now) {
+        handleCompleteSilent();
       }
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [remaining, running]);
+  }, []);
+
+  useEffect(() => {
+    setStorage('study_147_timer_running', running);
+    if (endTime) setStorage('study_147_timer_end', endTime);
+    else setStorage('study_147_timer_end', null);
+  }, [running, endTime]);
+
+  useEffect(() => {
+    function onVisibility() {
+      if (endTime) {
+        const now = Date.now();
+        const rem = Math.max(0, Math.round((endTime - now) / 1000));
+        setRemaining(rem);
+        if (rem <= 0 && running) {
+          clearTimers();
+          handleComplete();
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onVisibility);
+    window.addEventListener('pagehide', onVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onVisibility);
+      window.removeEventListener('pagehide', onVisibility);
+    };
+  }, [endTime, running]);
 
   useEffect(() => {
     if (running) {
@@ -144,6 +174,7 @@ export default function PomodoroTimer({ onSessionComplete }) {
           if (prev <= 1) {
             clearInterval(intervalRef.current);
             setRunning(false);
+            setEndTime(null);
             handleComplete();
             return 0;
           }
@@ -152,41 +183,77 @@ export default function PomodoroTimer({ onSessionComplete }) {
       }, 1000);
     }
     return () => clearInterval(intervalRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
+
+  function clearTimers() {
+    clearInterval(intervalRef.current);
+    setRunning(false);
+    setEndTime(null);
+  }
 
   function toggleStartPause() {
     if (!startedRef.current) startedRef.current = true;
-    setRunning((r) => !r);
+    if (!running) {
+      const now = Date.now();
+      const et = now + remaining * 1000;
+      setEndTime(et);
+      setStorage('study_147_timer_end', et);
+      setStorage('study_147_timer_running', true);
+      setRunning(true);
+    } else {
+      setRunning(false);
+      setEndTime(null);
+      setStorage('study_147_timer_end', null);
+      setStorage('study_147_timer_running', false);
+    }
   }
 
   function handleReset() {
     clearInterval(intervalRef.current);
     setRunning(false);
+    setEndTime(null);
     setRemaining(totalSeconds);
+    setStorage('study_147_timer_end', null);
+    setStorage('study_147_timer_running', false);
+  }
+
+  function handleCompleteSilent() {
+    try { if (settings.soundOn) playBeep(); } catch (e) {}
+    fireConfetti();
+    if (typeof onSessionComplete === 'function') {
+      const minutes = Math.round(totalSeconds / 60);
+      try { onSessionComplete(minutes); } catch (e) {}
+    }
+    setStorage('study_147_timer_end', null);
+    setStorage('study_147_timer_running', false);
+  }
+
+  function showNotification(title, body) {
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body });
+      }
+    } catch (e) {}
   }
 
   function handleComplete() {
-    // Play sound
     if (settings.soundOn) playBeep();
-    // Confetti
     fireConfetti();
-    // tick animation
     setTickAnim(true);
     setTimeout(() => setTickAnim(false), 1200);
-    // call parent
     const minutes = Math.round(totalSeconds / 60);
-    try {
-      if (typeof onSessionComplete === 'function') onSessionComplete(minutes);
-    } catch (e) {
-      // ignore
+    try { if (typeof onSessionComplete === 'function') onSessionComplete(minutes); } catch (e) {}
+    if (document.hidden && Notification && Notification.permission !== 'denied') {
+      Notification.requestPermission().then((perm) => { if (perm === 'granted') showNotification('Study session complete', `Your ${minutes}m session finished.`); });
+    } else if (document.hidden && Notification && Notification.permission === 'granted') {
+      showNotification('Study session complete', `Your ${minutes}m session finished.`);
     }
+    setEndTime(null);
+    setStorage('study_147_timer_end', null);
+    setStorage('study_147_timer_running', false);
   }
 
-  function applyPreset(mins) {
-    setMinutesInput(mins);
-  }
-
+  function applyPreset(mins) { setMinutesInput(mins); }
   function changeSession(type) {
     setSessionType(type);
     let mins = settings.work;
@@ -195,19 +262,21 @@ export default function PomodoroTimer({ onSessionComplete }) {
     setMinutesInput(mins);
   }
 
-  function saveSettings(newSettings) {
-    setSettings(newSettings);
-    // If saveAsDefault, update current minutes to reflect saved work value
-    if (newSettings.saveAsDefault) {
-      setMinutesInput(newSettings.work);
-    }
-    setOpenSettings(false);
-  }
+  function saveSettings(newSettings) { setSettings(newSettings); if (newSettings.saveAsDefault) setMinutesInput(newSettings.work); setOpenSettings(false); }
 
   const radius = 78;
   const circumference = 2 * Math.PI * radius;
   const progress = totalSeconds ? (totalSeconds - remaining) / totalSeconds : 0;
   const dashOffset = Math.max(0, circumference * (1 - progress));
+
+  useEffect(() => {
+    function onBeforeUnload() {
+      setStorage('study_147_timer_end', endTime);
+      setStorage('study_147_timer_running', running);
+    }
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [endTime, running]);
 
   return (
     <div className="p-4 md:p-6">
@@ -222,10 +291,9 @@ export default function PomodoroTimer({ onSessionComplete }) {
                 </linearGradient>
               </defs>
               <g transform="translate(100,100)">
-                <circle r="" cx="0" cy="0" r="80" fill="rgba(255,255,255,0.02)" />
-                <circle r="" cx="0" cy="0" r="80" fill="none" stroke="rgba(255,255,255,0.02)" strokeWidth="10" />
+                <circle cx="0" cy="0" r="80" fill="rgba(255,255,255,0.02)" />
                 <g transform="rotate(-90)">
-                  <circle ref={ringRef} r={radius} cx="0" cy="0" fill="none" stroke="#071025" strokeWidth="12" />
+                  <circle ref={null} r={radius} cx="0" cy="0" fill="none" stroke="#071025" strokeWidth="12" />
                   <circle r={radius} cx="0" cy="0" fill="none" stroke="url(#g1)" strokeWidth="12" strokeLinecap="round"
                     strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={dashOffset} style={{ transition: 'stroke-dashoffset 1s linear' }} />
                 </g>
