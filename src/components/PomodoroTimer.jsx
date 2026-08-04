@@ -96,6 +96,7 @@ export default function PomodoroTimer({ onSessionComplete }) {
   const lastSession = getStorage('study_147_timer_last', 'work');
   const savedEnd = getStorage('study_147_timer_end', null);
   const savedRunning = getStorage('study_147_timer_running', false);
+  const savedTopics = getStorage('study_147_topics', []);
 
   const [settings, setSettings] = useState(savedSettings);
   const [openSettings, setOpenSettings] = useState(false);
@@ -109,6 +110,13 @@ export default function PomodoroTimer({ onSessionComplete }) {
   const startedRef = useRef(false);
   const [tickAnim, setTickAnim] = useState(false);
   const sessionMinutesRef = useRef(Math.round(settings.work));
+
+  // topic association
+  const [topics, setTopics] = useState(savedTopics);
+  const [selectedTopicId, setSelectedTopicId] = useState(savedTopics && savedTopics.length ? savedTopics[0].id : '');
+
+  // notification UI state
+  const [notificationsEnabled, setNotificationsEnabled] = useState(typeof Notification !== 'undefined' && Notification.permission === 'granted');
 
   useEffect(() => {
     setStorage('study_147_timer_settings', settings);
@@ -129,7 +137,6 @@ export default function PomodoroTimer({ onSessionComplete }) {
       const now = Date.now();
       const rem = Math.max(0, Math.round((savedEnd - now) / 1000));
       setRemaining(rem);
-      // If rem is zero but a session was running, ensure totalSeconds reflects configured session minutes
       if (!totalSeconds || totalSeconds < 60) setTotalSeconds(Math.max(rem, settings.work * 60));
       if (savedRunning && savedEnd > now) {
         setRunning(true);
@@ -187,10 +194,29 @@ export default function PomodoroTimer({ onSessionComplete }) {
     return () => clearInterval(intervalRef.current);
   }, [running]);
 
+  useEffect(() => {
+    // keep local copy of topics up to date if storage changes elsewhere
+    const handler = () => {
+      const t = getStorage('study_147_topics', []);
+      setTopics(t);
+      if (!selectedTopicId && t && t.length) setSelectedTopicId(t[0].id);
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, [selectedTopicId]);
+
   function clearTimers() {
     clearInterval(intervalRef.current);
     setRunning(false);
     setEndTime(null);
+  }
+
+  async function enableNotifications() {
+    try {
+      if (typeof Notification === 'undefined') return;
+      const perm = await Notification.requestPermission();
+      setNotificationsEnabled(perm === 'granted');
+    } catch (e) {}
   }
 
   function toggleStartPause() {
@@ -202,8 +228,7 @@ export default function PomodoroTimer({ onSessionComplete }) {
       setStorage('study_147_timer_end', et);
       setStorage('study_147_timer_running', true);
       setRunning(true);
-      // capture the session minutes at start (so pauses/visibility won't change what we credit)
-      sessionMinutesRef.current = Math.round((totalSeconds) / 60);
+      sessionMinutesRef.current = Math.round(totalSeconds / 60);
     } else {
       setRunning(false);
       setEndTime(null);
@@ -226,7 +251,7 @@ export default function PomodoroTimer({ onSessionComplete }) {
     fireConfetti();
     const minutes = sessionMinutesRef.current || Math.round(totalSeconds / 60);
     if (typeof onSessionComplete === 'function') {
-      try { onSessionComplete(minutes); } catch (e) {}
+      try { onSessionComplete(minutes, selectedTopicId); } catch (e) {}
     }
     setStorage('study_147_timer_end', null);
     setStorage('study_147_timer_running', false);
@@ -246,7 +271,7 @@ export default function PomodoroTimer({ onSessionComplete }) {
     setTickAnim(true);
     setTimeout(() => setTickAnim(false), 1200);
     const minutes = sessionMinutesRef.current || Math.round(totalSeconds / 60);
-    try { if (typeof onSessionComplete === 'function') onSessionComplete(minutes); } catch (e) {}
+    try { if (typeof onSessionComplete === 'function') onSessionComplete(minutes, selectedTopicId); } catch (e) {}
     if (document.hidden && Notification && Notification.permission !== 'denied') {
       Notification.requestPermission().then((perm) => { if (perm === 'granted') showNotification('Study session complete', `Your ${minutes}m session finished.`); });
     } else if (document.hidden && Notification && Notification.permission === 'granted') {
@@ -335,6 +360,17 @@ export default function PomodoroTimer({ onSessionComplete }) {
               <button onClick={toggleStartPause} className="btn-primary px-4 py-2 rounded-md">{running ? 'Pause' : 'Start'}</button>
               <button onClick={handleReset} className="px-4 py-2 rounded-md bg-slate-800 text-slate-200">Reset</button>
               <div className="ml-auto text-xs text-slate-400">Short: {settings.short}m • Long: {settings.long}m</div>
+            </div>
+
+            <div className="mt-3 flex items-center gap-3">
+              <label className="text-xs text-slate-400">Associate to topic</label>
+              <select value={selectedTopicId} onChange={(e) => setSelectedTopicId(e.target.value)} className="ml-2 p-2 rounded bg-slate-800 text-white text-sm">
+                <option value="">(None)</option>
+                {topics.map((t) => (
+                  <option key={t.id} value={t.id}>{t.subject} — {t.title}</option>
+                ))}
+              </select>
+              <button onClick={enableNotifications} className="ml-auto px-3 py-1 rounded bg-slate-700 text-sm">{notificationsEnabled ? 'Notifications: On' : 'Enable Notifications'}</button>
             </div>
           </div>
         </div>
