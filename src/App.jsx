@@ -87,17 +87,17 @@ const SUBJECT_COLORS = {
 const DEFAULT_TOPICS = () => {
   const today = formatDateISO();
   return [
-    { id: 't-math', subject: 'Mathematics', title: 'Mathematics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-physics', subject: 'Physics', title: 'Physics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-chem', subject: 'Chemistry', title: 'Chemistry', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-bio', subject: 'Biology', title: 'Biology', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-comp', subject: 'Computer', title: 'Computer', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-eng-lang', subject: 'English Language', title: 'English Language', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-eng-lit', subject: 'English Literature', title: 'English Literature', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-hist', subject: 'History', title: 'History', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-civ', subject: 'Civics', title: 'Civics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-geo', subject: 'Geography', title: 'Geography', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
-    { id: 't-hindi', subject: 'Hindi', title: 'Hindi', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-math', subject: 'Mathematics', title: 'Mathematics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-physics', subject: 'Physics', title: 'Physics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-chem', subject: 'Chemistry', title: 'Chemistry', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-bio', subject: 'Biology', title: 'Biology', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-comp', subject: 'Computer', title: 'Computer', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-eng-lang', subject: 'English Language', title: 'English Language', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-eng-lit', subject: 'English Literature', title: 'English Literature', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-hist', subject: 'History', title: 'History', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-civ', subject: 'Civics', title: 'Civics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-geo', subject: 'Geography', title: 'Geography', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
+    { id: 't-hindi', subject: 'Hindi', title: 'Hindi', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false, totalMinutes: 0 },
   ];
 };
 
@@ -164,14 +164,24 @@ export default function App() {
     });
   };
 
-  // Reliable handler for timer completion: update stats.totalMinutes and award XP
-  function handleTimerComplete(minutes) {
+  // Reliable handler for timer completion: update stats.totalMinutes and award XP, and credit a topic if provided
+  function handleTimerComplete(minutes, topicId) {
     const m = Number(minutes) || 0;
     addXP(50);
     setStats((prev) => {
       const totalMinutes = (prev.totalMinutes || 0) + m;
       return { ...prev, totalMinutes, lastStudyDate: todayStr };
     });
+
+    if (topicId) {
+      setTopics((prev) =>
+        prev.map((t) => {
+          if (t.id !== topicId) return t;
+          const prevMinutes = t.totalMinutes || 0;
+          return { ...t, totalMinutes: prevMinutes + m };
+        })
+      );
+    }
   }
 
   const handleCreateTopic = (e) => {
@@ -192,6 +202,7 @@ export default function App() {
         day4Completed: false,
         day7Completed: false,
         archived: false,
+        totalMinutes: 0,
       },
       ...prev,
     ]);
@@ -345,6 +356,7 @@ export default function App() {
                       <button onClick={() => handleDeleteTopic(topic.id)} className="text-slate-500 hover:text-rose-400 text-xs">✕ Delete</button>
                     </div>
                     {topic.notes && <p className="text-xs text-slate-400 mb-4 bg-slate-950 p-2 rounded-lg">{topic.notes}</p>}
+                    <div className="text-xs text-slate-400 mt-1">Time: {topic.totalMinutes || 0}m</div>
                     <div className="grid grid-cols-3 gap-2 mt-4 text-center text-xs font-bold">
                       <div className={`p-2 rounded-lg border`}>{/* Day 1 */}
                         <div>Day 1</div>
