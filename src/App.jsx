@@ -71,25 +71,55 @@ const formatDisplayDate = (isoStr) => {
 
 const SUBJECT_COLORS = {
   Mathematics: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
-  Science: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+  Physics: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+  Chemistry: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
+  Biology: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
+  Computer: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
+  'English Language': { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/30' },
+  'English Literature': { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/30' },
   History: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
-  Programming: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
-  Languages: { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/30' },
+  Civics: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
+  Geography: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
+  Hindi: { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' },
   Other: { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' },
+};
+
+const DEFAULT_TOPICS = () => {
+  const today = formatDateISO();
+  return [
+    { id: 't-math', subject: 'Mathematics', title: 'Mathematics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-physics', subject: 'Physics', title: 'Physics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-chem', subject: 'Chemistry', title: 'Chemistry', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-bio', subject: 'Biology', title: 'Biology', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-comp', subject: 'Computer', title: 'Computer', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-eng-lang', subject: 'English Language', title: 'English Language', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-eng-lit', subject: 'English Literature', title: 'English Literature', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-hist', subject: 'History', title: 'History', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-civ', subject: 'Civics', title: 'Civics', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-geo', subject: 'Geography', title: 'Geography', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+    { id: 't-hindi', subject: 'Hindi', title: 'Hindi', notes: '', createdAt: today, day1Date: today, day4Date: addDaysToISO(today, 3), day7Date: addDaysToISO(today, 6), day1Completed: false, day4Completed: false, day7Completed: false, archived: false },
+  ];
 };
 
 export default function App() {
   const [topics, setTopics] = useState(() => {
     const saved = localStorage.getItem('study_147_topics');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const parsed = saved ? JSON.parse(saved) : [];
+      return parsed;
+    } catch (e) {
+      return [];
+    }
   });
+
   const [mistakes, setMistakes] = useState(() => {
     const saved = localStorage.getItem('study_147_mistakes');
-    return saved ? JSON.parse(saved) : [];
+    try { return saved ? JSON.parse(saved) : []; } catch (e) { return []; }
   });
+
   const [stats, setStats] = useState(() => {
     const saved = localStorage.getItem('study_147_stats');
-    return saved ? JSON.parse(saved) : { xp: 0, level: 1, streak: 0, lastStudyDate: formatDateISO(), totalMinutes: 0 };
+    try { return saved ? JSON.parse(saved) : { xp: 0, level: 1, streak: 0, lastStudyDate: formatDateISO(), totalMinutes: 0 }; } catch (e) { return { xp: 0, level: 1, streak: 0, lastStudyDate: formatDateISO(), totalMinutes: 0 }; }
   });
 
   const [activeTab, setActiveTab] = useState('home');
@@ -97,8 +127,17 @@ export default function App() {
   const [isAddMistakeOpen, setIsAddMistakeOpen] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(formatDateISO());
 
-  const [newTopic, setNewTopic] = useState({ subject: 'Programming', title: '', notes: '' });
+  const [newTopic, setNewTopic] = useState({ subject: 'Mathematics', title: '', notes: '' });
   const [newMistake, setNewMistake] = useState({ title: '', correction: '' });
+
+  // seed defaults if no topics
+  useEffect(() => {
+    if (!topics || topics.length === 0) {
+      const defaults = DEFAULT_TOPICS();
+      setTopics(defaults);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => localStorage.setItem('study_147_topics', JSON.stringify(topics)), [topics]);
   useEffect(() => localStorage.setItem('study_147_mistakes', JSON.stringify(mistakes)), [mistakes]);
@@ -125,6 +164,16 @@ export default function App() {
     });
   };
 
+  // Reliable handler for timer completion: update stats.totalMinutes and award XP
+  function handleTimerComplete(minutes) {
+    const m = Number(minutes) || 0;
+    addXP(50);
+    setStats((prev) => {
+      const totalMinutes = (prev.totalMinutes || 0) + m;
+      return { ...prev, totalMinutes, lastStudyDate: todayStr };
+    });
+  }
+
   const handleCreateTopic = (e) => {
     e.preventDefault();
     if (!newTopic.title.trim()) return;
@@ -146,7 +195,7 @@ export default function App() {
       },
       ...prev,
     ]);
-    setNewTopic({ subject: 'Programming', title: '', notes: '' });
+    setNewTopic({ subject: 'Mathematics', title: '', notes: '' });
     setIsAddModalOpen(false);
   };
 
@@ -356,7 +405,7 @@ export default function App() {
         )}
 
         {activeTab === 'pomodoro' && (
-          <PomodoroTimer onSessionComplete={(minutes) => { addXP(50); setStats((p) => ({ ...p, totalMinutes: p.totalMinutes + minutes })); }} />
+          <PomodoroTimer onSessionComplete={handleTimerComplete} />
         )}
 
         {activeTab === 'mistakes' && (
@@ -370,7 +419,7 @@ export default function App() {
                   <div key={m.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
                     <div className="flex justify-between items-center mb-2">
                       <h4 className="text-sm font-bold text-white">{m.title}</h4>
-                      <button onClick={() => setMistakes((prev) => prev.map((item) => item.id === m.id ? { ...item, resolved: !item.resolved } : item))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800">{m.resolved ? 'Mastered ✅' : 'Mark Fixed'}</button>
+                      <button onClick={() => setMistakes((prev) => prev.map((item) => item.id === m.id ? { ...item, resolved: !item.resolved } : item))} className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800">{m.resolved ? 'Unresolve' : 'Mark Resolved'}</button>
                     </div>
                     <p className="text-xs text-emerald-300/80 bg-emerald-950/20 p-2 rounded border border-emerald-900/30">💡 <strong>Correction:</strong> {m.correction}</p>
                   </div>
@@ -389,12 +438,23 @@ export default function App() {
                 <div>
                   <label className="text-xs text-slate-300">Subject</label>
                   <select value={newTopic.subject} onChange={(e) => setNewTopic((s) => ({ ...s, subject: e.target.value }))} className="w-full mt-1 p-2 rounded bg-slate-800">
-                    <option>Programming</option>
+                    <optgroup label="Science">
+                      <option>Physics</option>
+                      <option>Chemistry</option>
+                      <option>Biology</option>
+                    </optgroup>
+                    <optgroup label="English">
+                      <option>English Language</option>
+                      <option>English Literature</option>
+                    </optgroup>
+                    <optgroup label="SST">
+                      <option>History</option>
+                      <option>Civics</option>
+                      <option>Geography</option>
+                    </optgroup>
                     <option>Mathematics</option>
-                    <option>Science</option>
-                    <option>History</option>
-                    <option>Languages</option>
-                    <option>Other</option>
+                    <option>Computer</option>
+                    <option>Hindi</option>
                   </select>
                 </div>
                 <div>
