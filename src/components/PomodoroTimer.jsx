@@ -108,6 +108,7 @@ export default function PomodoroTimer({ onSessionComplete }) {
   const intervalRef = useRef(null);
   const startedRef = useRef(false);
   const [tickAnim, setTickAnim] = useState(false);
+  const sessionMinutesRef = useRef(Math.round(settings.work));
 
   useEffect(() => {
     setStorage('study_147_timer_settings', settings);
@@ -128,7 +129,8 @@ export default function PomodoroTimer({ onSessionComplete }) {
       const now = Date.now();
       const rem = Math.max(0, Math.round((savedEnd - now) / 1000));
       setRemaining(rem);
-      setTotalSeconds(Math.max(rem, 60));
+      // If rem is zero but a session was running, ensure totalSeconds reflects configured session minutes
+      if (!totalSeconds || totalSeconds < 60) setTotalSeconds(Math.max(rem, settings.work * 60));
       if (savedRunning && savedEnd > now) {
         setRunning(true);
         setEndTime(savedEnd);
@@ -200,6 +202,8 @@ export default function PomodoroTimer({ onSessionComplete }) {
       setStorage('study_147_timer_end', et);
       setStorage('study_147_timer_running', true);
       setRunning(true);
+      // capture the session minutes at start (so pauses/visibility won't change what we credit)
+      sessionMinutesRef.current = Math.round((totalSeconds) / 60);
     } else {
       setRunning(false);
       setEndTime(null);
@@ -220,8 +224,8 @@ export default function PomodoroTimer({ onSessionComplete }) {
   function handleCompleteSilent() {
     try { if (settings.soundOn) playBeep(); } catch (e) {}
     fireConfetti();
+    const minutes = sessionMinutesRef.current || Math.round(totalSeconds / 60);
     if (typeof onSessionComplete === 'function') {
-      const minutes = Math.round(totalSeconds / 60);
       try { onSessionComplete(minutes); } catch (e) {}
     }
     setStorage('study_147_timer_end', null);
@@ -241,7 +245,7 @@ export default function PomodoroTimer({ onSessionComplete }) {
     fireConfetti();
     setTickAnim(true);
     setTimeout(() => setTickAnim(false), 1200);
-    const minutes = Math.round(totalSeconds / 60);
+    const minutes = sessionMinutesRef.current || Math.round(totalSeconds / 60);
     try { if (typeof onSessionComplete === 'function') onSessionComplete(minutes); } catch (e) {}
     if (document.hidden && Notification && Notification.permission !== 'denied') {
       Notification.requestPermission().then((perm) => { if (perm === 'granted') showNotification('Study session complete', `Your ${minutes}m session finished.`); });
