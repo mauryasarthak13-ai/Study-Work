@@ -338,10 +338,10 @@ export default function PomodoroTimer({ onSessionComplete }) {
 
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
-              <button onClick={() => changeSession('work')} className={`px-3 py-1 rounded-md ${sessionType === 'work' ? 'bg-indigo-700/40 text-white' : 'bg-slate-800 text-slate-200'}`}>Work</button>
-              <button onClick={() => changeSession('short')} className={`px-3 py-1 rounded-md ${sessionType === 'short' ? 'bg-indigo-700/40 text-white' : 'bg-slate-800 text-slate-200'}`}>Short</button>
-              <button onClick={() => changeSession('long')} className={`px-3 py-1 rounded-md ${sessionType === 'long' ? 'bg-indigo-700/40 text-white' : 'bg-slate-800 text-slate-200'}`}>Long</button>
-              <button onClick={() => setOpenSettings(true)} className="ml-auto px-3 py-1 rounded-md bg-slate-800 text-slate-200">Settings</button>
+              <button onClick={() => changeSession('work')} className={`px-3 py-1 rounded-md ${sessionType === 'work' ? 'bg-indigo-700/40 text-white' : 'bg-slate-800 text-slate-200'} btn-animated`}>Work</button>
+              <button onClick={() => changeSession('short')} className={`px-3 py-1 rounded-md ${sessionType === 'short' ? 'bg-indigo-700/40 text-white' : 'bg-slate-800 text-slate-200'} btn-animated`}>Short</button>
+              <button onClick={() => changeSession('long')} className={`px-3 py-1 rounded-md ${sessionType === 'long' ? 'bg-indigo-700/40 text-white' : 'bg-slate-800 text-slate-200'} btn-animated`}>Long</button>
+              <button onClick={() => setOpenSettings(true)} className="ml-auto px-3 py-1 rounded-md bg-slate-800 text-slate-200 btn-animated">Settings</button>
             </div>
 
             <div className="mb-3">
@@ -349,16 +349,16 @@ export default function PomodoroTimer({ onSessionComplete }) {
               <div className="mt-2 flex items-center gap-2">
                 <input type="number" min="1" value={minutesInput} onChange={(e) => setMinutesInput(Math.max(1, Number(e.target.value || 1)))} className="w-28 p-2 rounded bg-slate-800 text-white" />
                 <div className="flex gap-2">
-                  <button onClick={() => applyPreset(25)} className="px-3 py-1 rounded-md bg-gradient-to-r from-primary to-secondary text-white">25</button>
-                  <button onClick={() => applyPreset(45)} className="px-3 py-1 rounded-md bg-slate-800 text-slate-200">45</button>
-                  <button onClick={() => applyPreset(60)} className="px-3 py-1 rounded-md bg-slate-800 text-slate-200">60</button>
+                  <button onClick={() => applyPreset(25)} className="px-3 py-1 rounded-md btn-primary btn-animated">25</button>
+                  <button onClick={() => applyPreset(45)} className="px-3 py-1 rounded-md btn-animated">45</button>
+                  <button onClick={() => applyPreset(60)} className="px-3 py-1 rounded-md btn-animated">60</button>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <button onClick={toggleStartPause} className="btn-primary px-4 py-2 rounded-md">{running ? 'Pause' : 'Start'}</button>
-              <button onClick={handleReset} className="px-4 py-2 rounded-md bg-slate-800 text-slate-200">Reset</button>
+              <button onClick={toggleStartPause} className={`btn-primary px-4 py-2 rounded-md ${running ? '' : 'floaty'} btn-animated`}>{running ? 'Pause' : 'Start'}</button>
+              <button onClick={handleReset} className="px-4 py-2 rounded-md bg-slate-800 text-slate-200 btn-animated">Reset</button>
               <div className="ml-auto text-xs text-slate-400">Short: {settings.short}m • Long: {settings.long}m</div>
             </div>
 
@@ -370,7 +370,7 @@ export default function PomodoroTimer({ onSessionComplete }) {
                   <option key={t.id} value={t.id}>{t.subject} — {t.title}</option>
                 ))}
               </select>
-              <button onClick={enableNotifications} className="ml-auto px-3 py-1 rounded bg-slate-700 text-sm">{notificationsEnabled ? 'Notifications: On' : 'Enable Notifications'}</button>
+              <button onClick={enableNotifications} className="ml-auto px-3 py-1 rounded bg-slate-700 text-sm btn-animated">{notificationsEnabled ? 'Notifications: On' : 'Enable Notifications'}</button>
             </div>
           </div>
         </div>
