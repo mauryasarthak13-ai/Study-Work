@@ -107,3 +107,9 @@ input, select, textarea{ background: rgba(255,255,255,0.02); border: 1px solid r
 
 /* Accessibility: larger focus ring for keyboard users */
 :focus-visible{ outline: 3px solid rgba(99,102,241,0.18); outline-offset: 3px; }
+
+/* Respect prefers-reduced-motion */
+.reduced-motion *, .reduced-motion *::before, .reduced-motion *::after {
+  animation: none !important;
+  transition: none !important;
+}
