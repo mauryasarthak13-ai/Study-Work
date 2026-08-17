@@ -76,7 +76,7 @@ export default function TimerSettingsModal({ open, onClose, settings, onSave }) 
 
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="px-3 py-2 rounded bg-slate-700 text-slate-200">Cancel</button>
-          <button onClick={handleSave} className="px-3 py-2 rounded bg-gradient-to-r from-primary to-secondary text-white">Save</button>
+          <button onClick={handleSave} className="px-3 py-2 rounded btn-primary">Save</button>
         </div>
       </div>
     </div>
